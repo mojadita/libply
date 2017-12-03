@@ -432,4 +432,3 @@ create_pointers()
   for (i = 0; i < nverts; i++)
     vertex_to_vertex_ptrs (vlist[i]);
 }
-
