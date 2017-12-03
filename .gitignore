@@ -1,3 +1,14 @@
 *.ply
 *.ply.gz
 *.o
+boundply
+flipply
+headply
+normalsply
+obj2ply
+platoply
+ply2ascii
+ply2binary
+ply2iv
+sphereply
+xformply
