@@ -1,54 +1,67 @@
 /*
-
-The interface routines for reading and writing PLY polygon files.
-
-Greg Turk
-
----------------------------------------------------------------
-
-A PLY file contains a single polygonal _object_.
-
-An object is composed of lists of _elements_.  Typical elements are
-vertices, faces, edges and materials.
-
-Each type of element for a given object has one or more _properties_
-associated with the element type.  For instance, a vertex element may
-have as properties the floating-point values x,y,z and the three unsigned
-chars representing red, green and blue.
-
------------------------------------------------------------------------
-
-Copyright (c) 1998 Georgia Institute of Technology.  All rights reserved.   
-  
-Permission to use, copy, modify and distribute this software and its   
-documentation for any purpose is hereby granted without fee, provided   
-that the above copyright notice and this permission notice appear in   
-all copies of this software and that you do not sell the software.   
-  
-THE SOFTWARE IS PROVIDED "AS IS" AND WITHOUT WARRANTY OF ANY KIND,   
-EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY   
-WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.   
-
+ * The interface routines for reading and writing PLY polygon files.
+ * 
+ * Greg Turk
+ *
+ * Modified 2017 Luis Colorado <luiscoloradourcola@gmail.com>
+ * 
+ * ---------------------------------------------------------------
+ * 
+ * A PLY file contains a single polygonal _object_.
+ * 
+ * An object is composed of lists of _elements_.  Typical elements are
+ * vertices, faces, edges and materials.
+ * 
+ * Each type of element for a given object has one or more _properties_
+ * associated with the element type.  For instance, a vertex element may
+ * have as properties the floating-point values x,y,z and the three unsigned
+ * chars representing red, green and blue.
+ * 
+ * -----------------------------------------------------------------------
+ * 
+ * Copyright (c) 1998 Georgia Institute of Technology.  All rights reserved.   
+ *   
+ * Permission to use, copy, modify and distribute this software and its   
+ * documentation for any purpose is hereby granted without fee, provided   
+ * that the above copyright notice and this permission notice appear in   
+ * all copies of this software and that you do not sell the software.   
+ *   
+ * THE SOFTWARE IS PROVIDED "AS IS" AND WITHOUT WARRANTY OF ANY KIND,   
+ * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY   
+ * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.   
+ * 
 */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <ply.h>
 
-char *type_names[] = {  /* names of scalar types */
-"invalid",
-"int8", "int16", "int32", "uint8", "uint16", "uint32", "float32", "float64",
+#define PLY_VERSION			"1.0"
+#define PLY_EXT				".ply"
+
+#define F(fmt) __FILE__":%d:%s: " fmt, __LINE__, __func__
+#define I(fmt, ...) do { fprintf(stdout, fmt, ##__VA_ARGS__); } while (0)
+#define W(fmt, ...) do { fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
+#define E(fmt, ...) do { fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
+#define FATAL(exc, fmt, ...) do { fprintf(stderr, fmt, ##__VA_ARGS__); exit(exc); } while (0)
+
+static char *type_names[] = {  /* names of scalar types */
+	"invalid",
+	"int8", "int16", "int32", "uint8", "uint16",
+	"uint32", "float32", "float64",
 };
 
-char *old_type_names[] = {  /* old names of types for backward compatability */
-"invalid",
-"char", "short", "int", "uchar", "ushort", "uint", "float", "double",
+static char *old_type_names[] = {  /* old names of types for backward compatability */
+	"invalid",
+	"char", "short", "int", "uchar", "ushort",
+	"uint", "float", "double",
 };
 
-int ply_type_size[] = {
-  0, 1, 2, 4, 1, 2, 4, 4, 8
+static int ply_type_size[] = {
+	0, 1, 2, 4, 1, 2, 4, 4, 8
 };
 
 #define NO_OTHER_PROPS  -1
@@ -105,167 +118,157 @@ void ascii_get_element(PlyFile *, char *);
 void binary_get_element(PlyFile *, char *);
 
 /* memory allocation */
-static char *my_alloc(int, int, char *);
+static void *my_alloc(int, int, char *);
 
 
 /*************/
 /*  Writing  */
 /*************/
 
-
 /******************************************************************************
-Given a file pointer, get ready to write PLY data to the file.
-
-Entry:
-  fp         - the given file pointer
-  nelems     - number of elements in object
-  elem_names - list of element names
-  file_type  - file type, either ascii or binary
-
-Exit:
-  returns a pointer to a PlyFile, used to refer to this file, or NULL if error
-******************************************************************************/
-
-PlyFile *ply_write(
-  FILE *fp,
-  int nelems,
-  char **elem_names,
-  int file_type
-)
+ * Given a file pointer, get ready to write PLY data to the file.
+ * 
+ * Entry:
+ *   fp         - the given file pointer
+ *   nelems     - number of elements in object
+ *   elem_names - list of element names
+ *   file_type  - file type, either ascii or binary
+ * 
+ * Exit:
+ *   returns a pointer to a PlyFile, used to refer to this file, or NULL if error
+ ******************************************************************************/
+PlyFile *
+ply_write(
+	FILE *fp,
+	int nelems,
+	char **elem_names,
+	int file_type)
 {
-  int i;
-  PlyFile *plyfile;
-  PlyElement *elem;
+	int i;
+	PlyElement *elem;
+	
+	/* check for NULL file pointer */
+	if (fp == NULL)
+		return (NULL);
+	
+	/* create a record for this object */
+	PlyFile *plyfile = malloc(sizeof *plyfile);
 
-  /* check for NULL file pointer */
-  if (fp == NULL)
-    return (NULL);
+	plyfile->file_type = file_type;
+	plyfile->num_comments = 0;
+	plyfile->num_obj_info = 0;
+	plyfile->num_elem_types = nelems;
+	plyfile->version = PLY_VERSION;
+	plyfile->fp = fp;
+	plyfile->other_elems = NULL;
+	
+	/* tuck aside the names of the elements */
+	
+	plyfile->elems = myalloc(sizeof *plyfile->elems * nelems);
+	for (i = 0; i < nelems; i++) {
+		plyfile->elems[i] = elem = myalloc(sizeof *elem);
+		elem->name = strdup (elem_names[i]);
+		elem->num = 0;
+		elem->nprops = 0;
+	} /* for */
+	
+	/* return pointer to the file descriptor */
+	return plyfile;
 
-  /* create a record for this object */
-
-  plyfile = (PlyFile *) myalloc (sizeof (PlyFile));
-  plyfile->file_type = file_type;
-  plyfile->num_comments = 0;
-  plyfile->num_obj_info = 0;
-  plyfile->num_elem_types = nelems;
-  plyfile->version = 1.0;
-  plyfile->fp = fp;
-  plyfile->other_elems = NULL;
-
-  /* tuck aside the names of the elements */
-
-  plyfile->elems = (PlyElement **) myalloc (sizeof (PlyElement *) * nelems);
-  for (i = 0; i < nelems; i++) {
-    elem = (PlyElement *) myalloc (sizeof (PlyElement));
-    plyfile->elems[i] = elem;
-    elem->name = strdup (elem_names[i]);
-    elem->num = 0;
-    elem->nprops = 0;
-  }
-
-  /* return pointer to the file descriptor */
-  return (plyfile);
-}
+} /* ply_write */
 
 
 /******************************************************************************
-Open a polygon file for writing.
-
-Entry:
-  filename   - name of file to read from
-  nelems     - number of elements in object
-  elem_names - list of element names
-  file_type  - file type, either ascii or binary
-
-Exit:
-  returns a file identifier, used to refer to this file, or NULL if error
-******************************************************************************/
-
-PlyFile *open_for_writing_ply(
-  char *filename,
-  int nelems,
-  char **elem_names,
-  int file_type
-)
+ * Open a polygon file for writing.
+ * 
+ * Entry:
+ *   filename   - name of file to read from
+ *   nelems     - number of elements in object
+ *   elem_names - list of element names
+ *   file_type  - file type, either ascii or binary
+ * 
+ * Exit:
+ *   returns a file identifier, used to refer to this file, or NULL if error
+ ******************************************************************************/
+PlyFile *
+open_for_writing_ply(
+	char *filename,
+	int nelems,
+	char **elem_names,
+	int file_type)
 {
-  int i;
-  PlyFile *plyfile;
-  PlyElement *elem;
-  char *name;
-  FILE *fp;
+	char  *ext   = PLY_EXT;
+	size_t l_fn  = strlen(filename),
+		   l_ext = strlen(ext);
 
-  /* tack on the extension .ply, if necessary */
+	/* tack on the extension .ply, if necessary */
+	int need_ext = strcmp(filename + l_fn - l_ext, ext) != 0;
 
-  name = (char *) myalloc (sizeof (char) * (strlen (filename) + 5));
-  strcpy (name, filename);
-  if (strlen (name) < 4 ||
-      strcmp (name + strlen (name) - 4, ".ply") != 0)
-      strcat (name, ".ply");
+	if (need_ext) {
+		char *name = myalloc(l_fn + l_ext + 1);
+		strcpy(name, filename); strcpy(name + l_fn, ext);
+		filename = name;
+	} /* if */
 
-  /* open the file for writing */
+	/* open the file for writing */
+	FILE *fp = fopen(filename, "w");
+	if (fp == NULL) return (NULL);
 
-  fp = fopen (name, "w");
-  if (fp == NULL) {
-    return (NULL);
-  }
+	/* create the actual PlyFile structure */
+	PlyFile *plyfile = ply_write (fp, nelems, elem_names, file_type);
+	if (plyfile == NULL) return NULL;
 
-  /* create the actual PlyFile structure */
-
-  plyfile = ply_write (fp, nelems, elem_names, file_type);
-  if (plyfile == NULL)
-    return (NULL);
-
-  /* return pointer to the file descriptor */
-  return (plyfile);
-}
+	/* return pointer to the file descriptor */
+	return plyfile;
+} /* open_for_writing_ply */
 
 
 /******************************************************************************
-Describe an element, including its properties and how many will be written
-to the file.
-
-Entry:
-  plyfile   - file identifier
-  elem_name - name of element that information is being specified about
-  nelems    - number of elements of this type to be written
-  nprops    - number of properties contained in the element
-  prop_list - list of properties
-******************************************************************************/
-
-void element_layout_ply(
-  PlyFile *plyfile,
-  char *elem_name,
-  int nelems,
-  int nprops,
-  PlyProperty *prop_list
-)
+ * Describe an element, including its properties and how many will be written
+ * to the file.
+ * 
+ * Entry:
+ *   plyfile   - file identifier
+ *   elem_name - name of element that information is being specified about
+ *   nelems    - number of elements of this type to be written
+ *   nprops    - number of properties contained in the element
+ *   prop_list - list of properties
+ ******************************************************************************/
+void
+element_layout_ply(
+	PlyFile *plyfile,
+	char *elem_name,
+	int nelems,
+	int nprops,
+	PlyProperty *prop_list)
 {
-  int i;
-  PlyElement *elem;
-  PlyProperty *prop;
+	int i;
+	PlyElement *elem;
+	PlyProperty *prop;
 
-  /* look for appropriate element */
-  elem = find_element (plyfile, elem_name);
-  if (elem == NULL) {
-    fprintf(stderr,"element_layout_ply: can't find element '%s'\n",elem_name);
-    exit (-1);
-  }
+	/* look for appropriate element */
+	elem = find_element (plyfile, elem_name);
+	if (elem == NULL) {
+	  FATAL(-1,
+		F("can't find element '%s'\n"),
+		elem_name);
+	} /* if */
 
-  elem->num = nelems;
+	elem->num = nelems;
 
-  /* copy the list of properties */
+	/* copy the list of properties */
 
-  elem->nprops = nprops;
-  elem->props = (PlyProperty **) myalloc (sizeof (PlyProperty *) * nprops);
-  elem->store_prop = (char *) myalloc (sizeof (char) * nprops);
+	elem->nprops = nprops;
+	elem->props = myalloc (sizeof *elem->props * nprops);
+	elem->store_prop = myalloc (sizeof *elem->store_prop * nprops);
 
-  for (i = 0; i < nprops; i++) {
-    prop = (PlyProperty *) myalloc (sizeof (PlyProperty));
-    elem->props[i] = prop;
-    elem->store_prop[i] = NAMED_PROP;
-    copy_property (prop, &prop_list[i]);
-  }
-}
+	for (i = 0; i < nprops; i++) {
+	  prop = myalloc (sizeof *prop);
+	  elem->props[i] = prop;
+	  elem->store_prop[i] = NAMED_PROP;
+	  copy_property(prop, &prop_list[i]);
+	} /* for */
+} /* element_layout_ply */
 
 
 /******************************************************************************
@@ -655,7 +658,7 @@ PlyFile *ply_read(FILE *fp, int *nelems, char ***elem_names)
         plyfile->file_type = PLY_BINARY_LE;
       else
         return (NULL);
-      plyfile->version = atof (words[2]);
+      plyfile->version = strdup(words[2]);
       found_format = 1;
     }
     else if (equal_strings (words[0], "element"))
@@ -720,7 +723,7 @@ PlyFile *ply_open_for_reading(
   int *nelems,
   char ***elem_names,
   int *file_type,
-  float *version
+  char **version
 )
 {
   FILE *fp;
@@ -1288,7 +1291,7 @@ Exit:
   file_type - PLY_ASCII, PLY_BINARY_BE, or PLY_BINARY_LE
 ******************************************************************************/
 
-void get_info_ply(PlyFile *ply, float *version, int *file_type)
+void get_info_ply(PlyFile *ply, char **version, int *file_type)
 {
   if (ply == NULL)
     return;
@@ -2421,7 +2424,7 @@ Entry:
   fname - file name from which memory was requested
 ******************************************************************************/
 
-static char *my_alloc(int size, int lnum, char *fname)
+static void *my_alloc(int size, int lnum, char *fname)
 {
   char *ptr;
 
