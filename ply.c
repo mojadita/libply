@@ -466,133 +466,123 @@ put_element_ply(
 
 	if (plyfile->file_type == PLY_ASCII) {
 
-	  /* write an ascii file */
+        /* write an ascii file */
 
-	  /* write out each property of the element */
-	  for (j = 0; j < elem->nprops; j++) {
+        /* write out each property of the element */
+        for (j = 0; j < elem->nprops; j++) {
 
-	    prop = elem->props[j];
+              prop = elem->props[j];
 
-	    if (elem->store_prop[j] == OTHER_PROP)
-	      elem_data = *other_ptr;
-	    else
-	      elem_data = (char *) elem_ptr;
+              if (elem->store_prop[j] == OTHER_PROP) {
+                  elem_data = *other_ptr;
+              } else {
+                  elem_data = (char *) elem_ptr;
+              }
+              if (prop->is_list == PLY_LIST) {  /* list */
+                  item = elem_data + prop->count_offset;
+                  get_stored_item ((void *) item, prop->count_internal,
+                                   &int_val, &uint_val, &double_val);
+                  write_ascii_item (fp, int_val, uint_val, double_val,
+                                    prop->count_external);
+                  list_count = uint_val;
+                  item_ptr = (char **) (elem_data + prop->offset);
+                  item = item_ptr[0];
+                  item_size = ply_type_size[prop->internal_type];
+                  for (k = 0; k < list_count; k++) {
+                      get_stored_item ((void *) item, prop->internal_type,
+                              &int_val, &uint_val, &double_val);
+                      write_ascii_item (fp, int_val, uint_val, double_val,
+                              prop->external_type);
+                      item += item_size;
+                  } /* for */
+              } else if (prop->is_list == PLY_STRING) {  /* string */
+                  char **str;
+                  item = elem_data + prop->offset;
+                  str = (char **) item;
+                  fprintf (fp, "\"%s\"", *str);
+              } else {                                  /* scalar */
+                      item = elem_data + prop->offset;
+                      get_stored_item ((void *) item, prop->internal_type,
+                                       &int_val, &uint_val, &double_val);
+                      write_ascii_item (fp, int_val, uint_val, double_val,
+                                        prop->external_type);
+              } /* if */
+        } /* for */
 
-	    if (prop->is_list == PLY_LIST) {  /* list */
-	      item = elem_data + prop->count_offset;
-	      get_stored_item ((void *) item, prop->count_internal,
-	                       &int_val, &uint_val, &double_val);
-	      write_ascii_item (fp, int_val, uint_val, double_val,
-	                        prop->count_external);
-	      list_count = uint_val;
-	      item_ptr = (char **) (elem_data + prop->offset);
-	      item = item_ptr[0];
-	      item_size = ply_type_size[prop->internal_type];
-	      for (k = 0; k < list_count; k++) {
-	        get_stored_item ((void *) item, prop->internal_type,
-	                         &int_val, &uint_val, &double_val);
-	        write_ascii_item (fp, int_val, uint_val, double_val,
-	                          prop->external_type);
-	        item += item_size;
-	      }
-	    }
-	    else if (prop->is_list == PLY_STRING) {  /* string */
-	char **str;
-	      item = elem_data + prop->offset;
-	str = (char **) item;
-	fprintf (fp, "\"%s\"", *str);
-	    }
-	    else {                                  /* scalar */
-	      item = elem_data + prop->offset;
-	      get_stored_item ((void *) item, prop->internal_type,
-	                       &int_val, &uint_val, &double_val);
-	      write_ascii_item (fp, int_val, uint_val, double_val,
-	                        prop->external_type);
-	    }
-	  }
+        fprintf (fp, "\n");
+	} else {
+        /* write a binary file */
 
-	  fprintf (fp, "\n");
-	}
-	else {
+        /* write out each property of the element */
+        for (j = 0; j < elem->nprops; j++) {
+            prop = elem->props[j];
+            if (elem->store_prop[j] == OTHER_PROP) {
+                elem_data = *other_ptr;
+            } else {
+                elem_data = (char *) elem_ptr;
+            } /* if */
+            if (prop->is_list == PLY_LIST) {   /* list */
+                item = elem_data + prop->count_offset;
+                item_size = ply_type_size[prop->count_internal];
+                get_stored_item ((void *) item, prop->count_internal,
+                                   &int_val, &uint_val, &double_val);
+                write_binary_item (fp, int_val, uint_val, double_val,
+                                     prop->count_external);
+                list_count = uint_val;
+                item_ptr = (char **) (elem_data + prop->offset);
+                item = item_ptr[0];
+                item_size = ply_type_size[prop->internal_type];
+                for (k = 0; k < list_count; k++) {
+                    get_stored_item ((void *) item, prop->internal_type,
+                                     &int_val, &uint_val, &double_val);
+                    write_binary_item (fp, int_val, uint_val, double_val,
+                                       prop->external_type);
+                    item += item_size;
+                } /* for */
+            } else if (prop->is_list == PLY_STRING) {   /* string */
+                int len;
+                char **str;
+                      item = elem_data + prop->offset;
+                str = (char **) item;
 
-	  /* write a binary file */
+                /* write the length */
+                len = strlen(*str) + 1;
+                fwrite (&len, sizeof(int), 1, fp);
 
-	  /* write out each property of the element */
-	  for (j = 0; j < elem->nprops; j++) {
-	    prop = elem->props[j];
-	    if (elem->store_prop[j] == OTHER_PROP)
-	      elem_data = *other_ptr;
-	    else
-	      elem_data = (char *) elem_ptr;
-	    if (prop->is_list == PLY_LIST) {   /* list */
-	      item = elem_data + prop->count_offset;
-	      item_size = ply_type_size[prop->count_internal];
-	      get_stored_item ((void *) item, prop->count_internal,
-	                       &int_val, &uint_val, &double_val);
-	      write_binary_item (fp, int_val, uint_val, double_val,
-	                         prop->count_external);
-	      list_count = uint_val;
-	      item_ptr = (char **) (elem_data + prop->offset);
-	      item = item_ptr[0];
-	      item_size = ply_type_size[prop->internal_type];
-	      for (k = 0; k < list_count; k++) {
-	        get_stored_item ((void *) item, prop->internal_type,
-	                         &int_val, &uint_val, &double_val);
-	        write_binary_item (fp, int_val, uint_val, double_val,
-	                           prop->external_type);
-	        item += item_size;
-	      }
-	    }
-	    else if (prop->is_list == PLY_STRING) {   /* string */
-	int len;
-	char **str;
-	      item = elem_data + prop->offset;
-	str = (char **) item;
-
-	/* write the length */
-	len = strlen(*str) + 1;
-	fwrite (&len, sizeof(int), 1, fp);
-
-	/* write the string, including the null character */
-	fwrite (*str, len, 1, fp);
-	    }
-	    else {                   /* scalar */
-	      item = elem_data + prop->offset;
-	      item_size = ply_type_size[prop->internal_type];
-	      get_stored_item ((void *) item, prop->internal_type,
-	                       &int_val, &uint_val, &double_val);
-	      write_binary_item (fp, int_val, uint_val, double_val,
-	                         prop->external_type);
-	    }
-	  }
-
-	}
+                /* write the string, including the null character */
+                fwrite (*str, len, 1, fp);
+            } else {                   /* scalar */
+                item = elem_data + prop->offset;
+                item_size = ply_type_size[prop->internal_type];
+                get_stored_item ((void *) item, prop->internal_type,
+                        &int_val, &uint_val, &double_val);
+                write_binary_item (fp, int_val, uint_val,
+                        double_val, prop->external_type);
+            } /* if */
+        } /* for */
+    } /* if */
 } /* put_element_ply */
-
-
-
-
-
 
 /*************/
 /*  Reading  */
 /*************/
 
-
-
 /******************************************************************************
-Given a file pointer, get ready to read PLY data from the file.
-
-Entry:
-  fp - the given file pointer
-
-Exit:
-  nelems     - number of elements in object
-  elem_names - list of element names
-  returns a pointer to a PlyFile, used to refer to this file, or NULL if error
-******************************************************************************/
-
-PlyFile *ply_read(FILE *fp, int *nelems, char ***elem_names)
+ * Given a file pointer, get ready to read PLY data from the file.
+ * 
+ * Entry:
+ *   fp - the given file pointer
+ * 
+ * Exit:
+ *   nelems     - number of elements in object
+ *   elem_names - list of element names
+ *   returns a pointer to a PlyFile, used to refer to this file, or NULL if error
+ ******************************************************************************/
+PlyFile *
+ply_read(
+        FILE *fp,
+        int *nelems,
+        char ***elem_names)
 {
   int i,j;
   PlyFile *plyfile;
@@ -705,8 +695,7 @@ PlyFile *ply_open_for_reading(
   int *nelems,
   char ***elem_names,
   int *file_type,
-  char **version
-)
+  char **version)
 {
   FILE *fp;
   PlyFile *plyfile;
