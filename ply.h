@@ -40,6 +40,9 @@ extern "C" {
 #include <stdio.h>
 #include <stddef.h>
 
+#define PLY_VERSION			"1.0"
+#define PLY_EXT				".ply"
+
 #define PLY_ASCII      1        /* ascii PLY file */
 #define PLY_BINARY_BE  2        /* binary PLY file, big endian */
 #define PLY_BINARY_LE  3        /* binary PLY file, little endian */
