@@ -700,7 +700,7 @@ ply_read(
  *   file_type  - file type, either ascii or binary
  *   version    - version number of PLY file
  *   returns a file identifier, used to refer to this file, or NULL if error
-******************************************************************************/
+ ******************************************************************************/
 PlyFile *
 ply_open_for_reading(
     char *filename,
@@ -1112,7 +1112,7 @@ get_other_properties(
  *
  * Exit:
  *   returns pointer to structure containing description of other_props
-******************************************************************************/
+ ******************************************************************************/
 PlyOtherProp *
 ply_get_other_properties(
         PlyFile *plyfile,
@@ -2232,36 +2232,38 @@ store_item (
 
 
 /******************************************************************************
-Add an element to a PLY file descriptor.
-
-Entry:
-  plyfile - PLY file descriptor
-  words   - list of words describing the element
-  nwords  - number of words in the list
-******************************************************************************/
-
-void add_element (PlyFile *plyfile, char **words, int nwords)
+ * Add an element to a PLY file descriptor.
+ * 
+ * Entry:
+ *   plyfile - PLY file descriptor
+ *   words   - list of words describing the element
+ *   nwords  - number of words in the list
+ ******************************************************************************/
+void
+add_element(
+        PlyFile *plyfile,
+        char **words,
+        int nwords)
 {
-  PlyElement *elem;
+    PlyElement *elem;
 
-  /* create the new element */
-  elem = (PlyElement *) myalloc (sizeof (PlyElement));
-  elem->name = strdup (words[1]);
-  elem->num = atoi (words[2]);
-  elem->nprops = 0;
+    /* create the new element */
+    elem = (PlyElement *) myalloc (sizeof (PlyElement));
+    elem->name = strdup (words[1]);
+    elem->num = atoi (words[2]);
+    elem->nprops = 0;
 
-  /* make room for new element in the object's list of elements */
-  if (plyfile->num_elem_types == 0)
-    plyfile->elems = (PlyElement **) myalloc (sizeof (PlyElement *));
-  else
-    plyfile->elems = (PlyElement **) realloc (plyfile->elems,
+    /* make room for new element in the object's list of elements */
+    if (plyfile->num_elem_types == 0)
+        plyfile->elems = (PlyElement **) myalloc (sizeof (PlyElement *));
+    else
+        plyfile->elems = (PlyElement **) realloc (plyfile->elems,
                      sizeof (PlyElement *) * (plyfile->num_elem_types + 1));
 
-  /* add the new element to the object's list */
-  plyfile->elems[plyfile->num_elem_types] = elem;
-  plyfile->num_elem_types++;
-}
-
+    /* add the new element to the object's list */
+    plyfile->elems[plyfile->num_elem_types] = elem;
+    plyfile->num_elem_types++;
+} /* add_element */
 
 /******************************************************************************
  * Return the type of a property, given the name of the property.
@@ -3090,7 +3092,6 @@ weight_props_ply(
     rules->nprops++;
 } /* weight_props_ply */
 
-
 /******************************************************************************
  * Return a pointer to a new set of properties that have been created using
  * a specified set of property combination rules and a given collection of
@@ -3099,216 +3100,217 @@ weight_props_ply(
  * Exit:
  *   returns a pointer to the new properties
  ******************************************************************************/
-
-void *get_new_props_ply(PlyFile *ply)
+void *
+get_new_props_ply(
+        PlyFile *ply)
 {
-  int i,j;
-  static double *vals;
-  static int max_vals = 0;
-  PlyPropRules *rules = ply->current_rules;
-  PlyElement *elem = rules->elem;
-  PlyProperty *prop;
-  char *data;
-  char *new_data;
-  void *ptr;
-  int offset;
-  int type;
-  double double_val;
-  int int_val;
-  unsigned int uint_val;
-  int random_pick;
+    int i,j;
+    static double *vals;
+    static int max_vals = 0;
+    PlyPropRules *rules = ply->current_rules;
+    PlyElement *elem = rules->elem;
+    PlyProperty *prop;
+    char *data;
+    char *new_data;
+    void *ptr;
+    int offset;
+    int type;
+    double double_val;
+    int int_val;
+    unsigned int uint_val;
+    int random_pick;
 
-  /* return NULL if we've got no "other" properties */
-  if (elem->other_size == 0) {
-    return (NULL);
-  }
+    /* return NULL if we've got no "other" properties */
+    if (elem->other_size == 0) {
+        return (NULL);
+    } /* if */
 
-  /* create room for combined other properties */
-  new_data = (char *) myalloc (sizeof (char) * elem->other_size);
+    /* create room for combined other properties */
+    new_data = (char *) myalloc (sizeof (char) * elem->other_size);
 
-  /* make sure there is enough room to store values we're to combine */
+    /* make sure there is enough room to store values we're to combine */
 
-  if (max_vals == 0) {
-    max_vals = rules->nprops;
-    vals = (double *) myalloc (sizeof (double) * rules->nprops);
-  }
-  if (rules->nprops >= max_vals) {
-    max_vals = rules->nprops;
-    vals = (double *) realloc (vals, sizeof (double) * rules->nprops);
-  }
+    if (max_vals == 0) {
+        max_vals = rules->nprops;
+        vals = (double *) myalloc (sizeof (double) * rules->nprops);
+    } /* if */
+    if (rules->nprops >= max_vals) {
+        max_vals = rules->nprops;
+        vals = (double *) realloc (vals, sizeof (double) * rules->nprops);
+    } /* if */
 
-  /* in case we need a random choice */
-  random_pick = (int) floor (rules->nprops * drand48());
+    /* in case we need a random choice */
+    random_pick = (int) floor (rules->nprops * drand48());
 
-  /* calculate the combination for each "other" property of the element */
+    /* calculate the combination for each "other" property of the element */
 
-  for (i = 0; i < elem->nprops; i++) {
+    for (i = 0; i < elem->nprops; i++) {
 
-    /* don't bother with properties we've been asked to store explicitly */
-    if (elem->store_prop[i])
-      continue;
+        /* don't bother with properties we've been asked to store explicitly */
+        if (elem->store_prop[i])
+            continue;
 
-    prop = elem->props[i];
-    offset = prop->offset;
-    type = prop->external_type;
+        prop = elem->props[i];
+        offset = prop->offset;
+        type = prop->external_type;
 
-    /* collect together all the values we're to combine */
+        /* collect together all the values we're to combine */
 
-    for (j = 0; j < rules->nprops; j++) {
-      data = (char *) rules->props[j];
-      ptr = (void *) (data + offset);
-      get_stored_item ((void *) ptr, type, &int_val, &uint_val, &double_val);
-      vals[j] = double_val;
-    }
+        for (j = 0; j < rules->nprops; j++) {
+            data = (char *) rules->props[j];
+            ptr = (void *) (data + offset);
+            get_stored_item ((void *) ptr, type, &int_val, &uint_val, &double_val);
+            vals[j] = double_val;
+        } /* for */
 
-    /* calculate the combined value */
+        /* calculate the combined value */
 
-    switch (rules->rule_list[i]) {
-      case AVERAGE_RULE: {
-    double sum = 0;
-    double weight_sum = 0;
-    for (j = 0; j < rules->nprops; j++) {
-      sum += vals[j] * rules->weights[j];
-      weight_sum += rules->weights[j];
-    }
-    double_val = sum / weight_sum;
-        break;
-      }
-      case MINIMUM_RULE: {
-    double_val = vals[0];
-    for (j = 1; j < rules->nprops; j++)
-      if (double_val > vals[j])
-        double_val = vals[j];
-        break;
-      }
-      case MAXIMUM_RULE: {
-    double_val = vals[0];
-    for (j = 1; j < rules->nprops; j++)
-      if (double_val < vals[j])
-        double_val = vals[j];
-        break;
-      }
-      case RANDOM_RULE: {
-    double_val = vals[random_pick];
-        break;
-      }
-      case SAME_RULE: {
-    double_val = vals[0];
-    for (j = 1; j < rules->nprops; j++)
-      if (double_val != vals[j]) {
-        fprintf (stderr,
-    "get_new_props_ply: Error combining properties that should be the same.\n");
-            exit (-1);
-      }
-        break;
-      }
-      default:
-        fprintf (stderr, "get_new_props_ply: Bad rule = %d\n",
-             rules->rule_list[i]);
-    exit (-1);
-    }
+        switch (rules->rule_list[i]) {
+        case AVERAGE_RULE: {
+            double sum = 0;
+            double weight_sum = 0;
+            for (j = 0; j < rules->nprops; j++) {
+                sum += vals[j] * rules->weights[j];
+                weight_sum += rules->weights[j];
+            } /* block */
+            double_val = sum / weight_sum;
+            break;
+        }
+        case MINIMUM_RULE: {
+            double_val = vals[0];
+            for (j = 1; j < rules->nprops; j++)
+                if (double_val > vals[j])
+                    double_val = vals[j];
+            break;
+        } /* block */
+        case MAXIMUM_RULE: {
+            double_val = vals[0];
+            for (j = 1; j < rules->nprops; j++)
+                if (double_val < vals[j])
+                    double_val = vals[j];
+            break;
+        } /* block */
+        case RANDOM_RULE: {
+            double_val = vals[random_pick];
+            break;
+        } /* block */
+        case SAME_RULE: {
+            double_val = vals[0];
+            for (j = 1; j < rules->nprops; j++)
+                if (double_val != vals[j]) {
+                    FATAL(  -1,
+                            F("Error combining properties "
+                                "that should be the same.\n"));
+                } /* if */
+            break;
+        } /* block */
+        default:
+            FATAL(-1,
+                    "Bad rule = %d\n",
+                rules->rule_list[i]);
+        } /* switch */
 
-    /* store the combined value */
+        /* store the combined value */
 
-    int_val = (int) double_val;
-    uint_val = (unsigned int) double_val;
-    ptr = (void *) (new_data + offset);
-    store_item ((char *) ptr, type, int_val, uint_val, double_val);
-  }
+        int_val = (int) double_val;
+        uint_val = (unsigned int) double_val;
+        ptr = (void *) (new_data + offset);
+        store_item ((char *) ptr, type, int_val, uint_val, double_val);
+    } /* for */
 
-  return ((void *) new_data);
-}
+    return ((void *) new_data);
+} /* get_new_props_ply */
 
 
 /******************************************************************************
-Set the list of user-specified property combination rules.
-******************************************************************************/
-
-void set_prop_rules_ply (PlyFile *ply, PlyRuleList *prop_rules)
+ * Set the list of user-specified property combination rules.
+ ******************************************************************************/
+void
+set_prop_rules_ply(
+        PlyFile *ply,
+        PlyRuleList *prop_rules)
 {
-  ply->rule_list = prop_rules;
-}
-
+    ply->rule_list = prop_rules;
+} /* set_prop_rules_ply */
 
 /******************************************************************************
-Append a property rule to a growing list of user-specified rules.
-
-Entry:
-  rule_list - current rule list
-  name      - name of property combination rule
-  property  - "element.property" says which property the rule affects
-
-Exit:
-  returns pointer to the new rule list
-******************************************************************************/
-
-PlyRuleList *append_prop_rule (
-  PlyRuleList *rule_list,
-  char *name,
-  char *property
-)
+ * Append a property rule to a growing list of user-specified rules.
+ * 
+ * Entry:
+ *   rule_list - current rule list
+ *   name      - name of property combination rule
+ *   property  - "element.property" says which property the rule affects
+ * 
+ * Exit:
+ *   returns pointer to the new rule list
+ ******************************************************************************/
+PlyRuleList *
+append_prop_rule(
+        PlyRuleList *rule_list,
+        char *name,
+        char *property)
 {
-  PlyRuleList *rule;
-  PlyRuleList *rule_ptr;
-  char *str,*str2;
-  char *ptr;
+    PlyRuleList *rule;
+    PlyRuleList *rule_ptr;
+    char *str,*str2;
+    char *ptr;
 
-  /* find . */
-  str = strdup (property);
-  for (ptr = str; *ptr != '\0' && *ptr != '.'; ptr++) ;
+    /* find . */
+    str = strdup (property);
+    for (ptr = str; *ptr != '\0' && *ptr != '.'; ptr++)
+        continue;
 
-  /* split string at . */
-  if (*ptr == '.') {
-    *ptr = '\0';
-    str2 = ptr + 1;
-  }
-  else {
-    fprintf (stderr, "Can't find property '%s' for rule '%s'\n",
-             property, name);
-    return (rule_list);
-  }
+    /* split string at . */
+    if (*ptr == '.') {
+        *ptr = '\0';
+        str2 = ptr + 1;
+    } else {
+        W(F("Can't find property '%s' for rule '%s'\n"),
+                property, name);
+        return (rule_list);
+    } /* else */
 
-  rule = (PlyRuleList *) malloc (sizeof (PlyRuleList));
-  rule->name = name;
-  rule->element = str;
-  rule->property = str2;
-  rule->next = NULL;
+    rule = (PlyRuleList *) malloc (sizeof (PlyRuleList));
+    rule->name = name;
+    rule->element = str;
+    rule->property = str2;
+    rule->next = NULL;
 
-  /* either start rule list or append to it */
+    /* either start rule list or append to it */
 
-  if (rule_list == NULL)
-    rule_list = rule;
-  else {                      /* append new rule to current list */
-    rule_ptr = rule_list;
-    while (rule_ptr->next != NULL)
-      rule_ptr = rule_ptr->next;
-    rule_ptr->next = rule;
-  }
+    if (rule_list == NULL) {
+        rule_list = rule;
+    } else {                      /* append new rule to current list */
+        rule_ptr = rule_list;
+        while (rule_ptr->next != NULL)
+            rule_ptr = rule_ptr->next;
+        rule_ptr->next = rule;
+    } /* else */
 
-  /* return pointer to list */
+    /* return pointer to list */
 
-  return (rule_list);
-}
-
+    return rule_list;
+} /* append_prop_rule */
 
 /******************************************************************************
-See if a name matches the name of any property combination rules.
-
-Entry:
-  name - name of rule we're trying to match
-
-Exit:
-  returns 1 if we find a match, 0 if not
-******************************************************************************/
-
-int matches_rule_name (char *name)
+ * See if a name matches the name of any property combination rules.
+ * 
+ * Entry:
+ *   name - name of rule we're trying to match
+ * 
+ * Exit:
+ *   returns 1 if we find a match, 0 if not
+ ******************************************************************************/
+int
+matches_rule_name(
+        char *name)
 {
-  int i;
+    int i;
 
-  for (i = 0; rule_name_list[i].code != -1; i++)
-    if (equal_strings (rule_name_list[i].name, name))
-      return (1);
+    for (i = 0; rule_name_list[i].code != -1; i++) {
+        if (equal_strings (rule_name_list[i].name, name))
+            return (1);
+    } /* for */
 
-  return (0);
-}
-
+    return (0);
+} /* matches_rule_name */
