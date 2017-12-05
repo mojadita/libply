@@ -700,7 +700,7 @@ ply_read(
  *   file_type  - file type, either ascii or binary
  *   version    - version number of PLY file
  *   returns a file identifier, used to refer to this file, or NULL if error
-******************************************************************************/
+ ******************************************************************************/
 PlyFile *
 ply_open_for_reading(
     char *filename,
@@ -1112,7 +1112,7 @@ get_other_properties(
  *
  * Exit:
  *   returns pointer to structure containing description of other_props
-******************************************************************************/
+ ******************************************************************************/
 PlyOtherProp *
 ply_get_other_properties(
         PlyFile *plyfile,
@@ -2265,7 +2265,6 @@ add_element(
     plyfile->num_elem_types++;
 } /* add_element */
 
-
 /******************************************************************************
  * Return the type of a property, given the name of the property.
  * 
@@ -3092,7 +3091,6 @@ weight_props_ply(
     rules->weights[rules->nprops] = weight;
     rules->nprops++;
 } /* weight_props_ply */
-
 
 /******************************************************************************
  * Return a pointer to a new set of properties that have been created using
