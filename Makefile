@@ -22,10 +22,11 @@ OBJS+=$(common_objs)
 ply_lex_objs = ply_lex_d.o
 ply_lex: $(ply_lex_objs)
 	$(CC) $(LDFLAGS) -o $@ $($@_objs) $(common_objs) $(LIBS)
+TOCLEAN += $(ply_lex_objs) ply_lex
 
 ply_lex_d.o: ply_lex.c ply.h
 	$(CC) $(CFLAGS) -DDEBUG=1 -c ply_lex.c -o $@ 
-
+TOCLEAN += ply_lex_d.o ply_lex.c
 
 headply_objs = headply.o
 OBJS+=$(headply_objs)

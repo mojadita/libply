@@ -12,3 +12,5 @@ ply2binary
 ply2iv
 sphereply
 xformply
+ply_lex
+ply_lex.c
