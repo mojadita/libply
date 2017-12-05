@@ -27,6 +27,7 @@ WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <ply.h>
 
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
   /* maybe print out help message */
 
 #ifdef WRITE_ASCII
-  if (argc > 2 || (argc == 2 && !equal_strings (argv[1], "-p"))) {
+  if (argc > 2 || (argc == 2 && strcmp(argv[1], "-p") != 0)) {
     fprintf (stderr, "usage: %s [flags] <infile >outfile\n", argv[0]);
     fprintf (stderr, "          -p (print element labels)\n");
     exit (0);
@@ -86,7 +87,7 @@ int main(int argc, char *argv[])
   }
 #endif
 
-  if (argc == 2 && equal_strings (argv[1], "-p"))
+  if (argc == 2 && strcmp(argv[1], "-p") == 0)
     verbose_flag = 1;
 
   /* open the input and output files */

@@ -21,6 +21,7 @@ WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <ply.h>
 
@@ -452,7 +453,7 @@ void read_file(void)
     /* prepare to read the i'th list of elements */
     elem_name = setup_element_read_ply (in_ply, i, &elem_count);
 
-    if (equal_strings ("vertex", elem_name)) {
+    if (strcmp("vertex", elem_name) == 0) {
 
       /* create a vertex list to hold all the vertices */
       vlist = (Vertex **) malloc (sizeof (Vertex *) * elem_count);

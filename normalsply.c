@@ -22,7 +22,7 @@ WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <strings.h>
+#include <string.h>
 #include <ply.h>
 
 
@@ -224,7 +224,7 @@ void read_file(void)
     /* prepare to read the i'th list of elements */
     elem_name = setup_element_read_ply (in_ply, i, &elem_count);
 
-    if (equal_strings ("vertex", elem_name)) {
+    if (strcmp("vertex", elem_name) == 0) {
 
       /* create a vertex list to hold all the vertices */
       vlist = (Vertex **) malloc (sizeof (Vertex *) * elem_count);
@@ -239,11 +239,11 @@ void read_file(void)
       for (j = 0; j < in_ply->elems[i]->nprops; j++) {
 	PlyProperty *prop;
 	prop = in_ply->elems[i]->props[j];
-	if (equal_strings ("nx", prop->name))
+	if (strcmp("nx", prop->name) == 0)
 	  setup_property_ply (in_ply, &vert_props[3]);
-	if (equal_strings ("ny", prop->name))
+	if (strcmp("ny", prop->name) == 0)
 	  setup_property_ply (in_ply, &vert_props[4]);
-	if (equal_strings ("nz", prop->name))
+	if (strcmp("nz", prop->name) == 0)
 	  setup_property_ply (in_ply, &vert_props[5]);
       }
 
@@ -256,7 +256,7 @@ void read_file(void)
         get_element_ply (in_ply, (void *) vlist[j]);
       }
     }
-    else if (equal_strings ("face", elem_name)) {
+    else if (strcmp("face", elem_name) == 0) {
 
       /* create a list to hold all the face elements */
       flist = (Face **) malloc (sizeof (Face *) * elem_count);

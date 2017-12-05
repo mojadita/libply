@@ -492,7 +492,7 @@ void read_obj(void)
 
     first_word = words[0];
 
-    if (equal_strings (first_word, "v")) {
+    if (strcmp(first_word, "v") == 0) {
       if (nwords < 4) {
 	fprintf (stderr, "Too few coordinates: '%s'", str_orig);
 	exit (-1);
@@ -508,12 +508,12 @@ void read_obj(void)
         w = 1.0;
       make_vertex (x, y, z, w);
     }
-    else if (equal_strings (first_word, "vn")) {
+    else if (strcmp(first_word, "vn") == 0) {
     }
-    else if (equal_strings (first_word, "vt")) {
+    else if (strcmp(first_word, "vt") == 0) {
     }
-    else if (equal_strings (first_word, "f")) {
-      make_face (&words[1], nwords-1);
+    else if (strcmp(first_word, "f") == 0) {
+      make_face(&words[1], nwords-1);
     }
     else {
       fprintf (stderr, "Do not recognize: '%s'\n", str_orig);
