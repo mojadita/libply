@@ -1286,11 +1286,11 @@ get_info_ply(
         char **version,
         int *file_type)
 {
-  if (ply == NULL)
-    return;
+    if (ply == NULL)
+        return;
 
-  *version = ply->version;
-  *file_type = ply->file_type;
+    *version = ply->version;
+    *file_type = ply->file_type;
 } /* get_info_ply */
 
 /******************************************************************************
@@ -1301,16 +1301,16 @@ equal_strings(
         char *s1,
         char *s2)
 {
-  int i;
+    int i;
 
-  while (*s1 && *s2)
-    if (*s1++ != *s2++)
-      return 0;
+    while (*s1 && *s2)
+        if (*s1++ != *s2++)
+            return 0;
 
-  if (*s1 != *s2)
-    return 0;
-  else
-    return 1;
+    if (*s1 != *s2)
+        return 0;
+    else
+        return 1;
 } /* equal_strings */
 
 
@@ -1822,27 +1822,27 @@ get_item_value(
     case Int8:
             pchar = (char *) item;
             int_value = *pchar;
-            return (double) int_value;
+            return int_value;
     case Uint8:
             puchar = (unsigned char *) item;
             int_value = *puchar;
-            return (double) int_value;
+            return int_value;
     case Int16:
             pshort = (short int *) item;
             int_value = *pshort;
-            return (double) int_value;
+            return int_value;
     case Uint16:
             pushort = (unsigned short int *) item;
             int_value = *pushort;
-            return (double) int_value;
+            return int_value;
     case Int32:
             pint = (int *) item;
             int_value = *pint;
-            return (double) int_value;
+            return int_value;
     case Uint32:
             puint = (unsigned int *) item;
             uint_value = *puint;
-            return (double) uint_value;
+            return uint_value;
     case Float32:
             pfloat = (float *) item;
             double_value = *pfloat;
@@ -3216,7 +3216,7 @@ get_new_props_ply(
         store_item((char *) ptr, type, int_val, uint_val, double_val);
     } /* for */
 
-    return (void *) new_data;
+    return new_data;
 } /* get_new_props_ply */
 
 /******************************************************************************
