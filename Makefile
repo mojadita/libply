@@ -9,7 +9,7 @@ TOCLEAN?=
 OBJS?=
 
 TARGETS= ply2ascii ply2binary xformply ply2iv sphereply \
-		 platoply boundply obj2ply flipply normalsply headply
+		 platoply boundply obj2ply flipply normalsply headply ply_lex
 
 all: $(TARGETS)
 TOCLEAN+=$(TARGETS)
@@ -18,6 +18,14 @@ clean:
 
 common_objs = ply.o
 OBJS+=$(common_objs)
+
+ply_lex_objs = ply_lex_d.o
+ply_lex: $(ply_lex_objs)
+	$(CC) $(LDFLAGS) -o $@ $($@_objs) $(common_objs) $(LIBS)
+
+ply_lex_d.o: ply_lex.c ply.h
+	$(CC) $(CFLAGS) -DDEBUG=1 -c ply_lex.c -o $@ 
+
 
 headply_objs = headply.o
 OBJS+=$(headply_objs)

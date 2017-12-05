@@ -42,10 +42,10 @@
 #include <ply.h>
 
 #define F(fmt) __FILE__":%d:%s: " fmt, __LINE__, __func__
-#define I(fmt, ...) do { fprintf(stdout, fmt, ##__VA_ARGS__); } while (0)
-#define W(fmt, ...) do { fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
-#define E(fmt, ...) do { fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
-#define FATAL(exc, fmt, ...) do { fprintf(stderr, fmt, ##__VA_ARGS__); exit(exc); } while (0)
+#define I(fmt, ...) do { fprintf(stdout, "INFO:" fmt, ##__VA_ARGS__); } while (0)
+#define W(fmt, ...) do { fprintf(stderr, "WARNING:" fmt, ##__VA_ARGS__); } while (0)
+#define E(fmt, ...) do { fprintf(stderr, "ERROR:" fmt, ##__VA_ARGS__); } while (0)
+#define FATAL(exc, fmt, ...) do { fprintf(stderr, "FATAL:" fmt, ##__VA_ARGS__); exit(exc); } while (0)
 
 static char *type_names[] = {  /* names of scalar types */
     "invalid",
@@ -360,16 +360,16 @@ header_complete_ply(
     fprintf(fp, "ply\n");
     switch (plyfile->file_type) {
     case PLY_ASCII:
-      fprintf(fp, "format ascii " PLY_VERSION "\n");
-      break;
+            fprintf(fp, "format ascii " PLY_VERSION "\n");
+            break;
     case PLY_BINARY_BE:
-      fprintf(fp, "format binary_big_endian " PLY_VERSION "\n");
-      break;
+            fprintf(fp, "format binary_big_endian " PLY_VERSION "\n");
+            break;
     case PLY_BINARY_LE:
-      fprintf(fp, "format binary_little_endian " PLY_VERSION "\n");
-      break;
+            fprintf(fp, "format binary_little_endian " PLY_VERSION "\n");
+            break;
     default:
-      FATAL(-1, F("bad file type = %d\n"), plyfile->file_type);
+            FATAL(-1, F("bad file type = %d\n"), plyfile->file_type);
     } /* switch */
 
     /* write out the comments */
