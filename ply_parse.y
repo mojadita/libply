@@ -4,6 +4,10 @@
  * Date: Wed Dec  6 15:40:53 EET 2017
  */
 
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "ply.h"
 #include "ply_parse.h"
 #include "ply_lex.h"
@@ -25,14 +29,19 @@
 #define EMPTY  " \033[34m/* empty */"
 #define ERROR  " \033[31m<<ERROR>>"
 
+PlyProperty *new_property(PlyToken *type, PlyToken *name);
+PlyProperty *new_list_property(PlyToken *size_type, PlyToken *elem_type, PlyToken *name);
+
 %}
 
-%token PLY FORMAT COMMENT OBJ_INFO
+%token PLY FORMAT COMMENT OBJ_INFO TOKERROR
 %token ELEMENT PROPERTY LIST END_HEADER CRLF
 %token <tok> IDENT UNSLIT SIGLIT FLTLIT STRLIT TEXT
+%type <prop> property
 
 %union {
    struct PlyToken *tok; 
+   PlyProperty *prop;
 }
 
 %%
@@ -96,9 +105,11 @@ property_list: property_list property {
 
 property: PROPERTY IDENT IDENT CRLF {
             RULE(property, T(PROPERTY) T(IDENT) T(IDENT) T(CRLF));
+            $$ = new_property($2, $3);
         }
         | PROPERTY LIST IDENT IDENT IDENT CRLF {
             RULE(property, T(PROPERTY) T(LIST) T(IDENT) T(IDENT) T(IDENT) T(CRLF));
+            $$ = new_list_property($3, $4, $5);
         }
         
 %%
@@ -114,3 +125,17 @@ int yyerror(char *s)
 {
     fprintf(stderr, F("%s\n"), s);
 } /* yyerror */
+
+PlyProperty *new_property(PlyToken *type, PlyToken *name)
+{
+    PlyProperty *res = ply_malloc(sizeof *res);
+    assert(res != NULL);
+    return res;
+} /* new_list_property */
+
+PlyProperty *new_list_property(PlyToken *size_type, PlyToken *elem_type, PlyToken *name)
+{
+    PlyProperty *res = ply_malloc(sizeof *res);
+    assert(res != NULL);
+    return res;
+} /* new_list_property */

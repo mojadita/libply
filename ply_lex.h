@@ -34,4 +34,13 @@ struct PlyTokenList {
     PlyToken   *tl_last;
 };
 
+#define ply_malloc(p) plymalloc(p, __FILE__, __LINE__, __func__)
+#define ply_strdup(p) plystrdup(p, __FILE__, __LINE__, __func__)
+#define ply_strfree(p) plystrfree(p, __FILE__, __LINE__, __func__)
+#define ply_free(p) plyfree(p, __FILE__, __LINE__, __func__)
+void *plymalloc(size_t sz, const char* file, const int line, const char*func);
+char *plystrdup(const char*old, const char* file, const int line, const char*func);
+void  plyfree(void* ptr, const char* file, const int line, const char*func);
+void  plystrfree(char* ptr, const char* file, const int line, const char*func);
+
 #endif /* _PLY_LEX_H */

@@ -16,8 +16,9 @@
 #define DEBUG 0
 #endif
 
-#if DEBUG
 #define F(fmt) __FILE__":%d:%s:" fmt, __LINE__, __func__
+
+#if DEBUG
 #define SYMBOL  (0)
 #define RETURN(tok) do { \
         if (!tok) \
@@ -78,7 +79,7 @@ sig     [+-]{num}
 flt     [+-]?({num}\.[0-9]*|[0-9]*\.{num})([eEdD][+-]?{num})?
 id      [a-zA-Z_][a-zA-Z0-9_]*
 lst     "list"
-str     \"([^"\n\\]|\\.)*\"
+str     \"([^"\n]|\"\")*\"
 %%
 <INITIAL>{ply}      { BEGIN(hdr);       RETURN(PLY); }
 <hdr>{fmt}          {                   RETURN(FORMAT); }
@@ -96,8 +97,8 @@ str     \"([^"\n\\]|\\.)*\"
 <hdr>{end}          { BEGIN(bdy);       RETURN(END_HEADER); }
 <hdr,bdy,lst,txt>{sp}   ; /* ignored */
 <hdr,bdy>{crlf}     {                   RETURN(CRLF); }
-<INITIAL>.          { BEGIN(err);       RETURN(0); }
-<err>.              {                   RETURN(0); }
+<INITIAL>.          { BEGIN(err);       RETURN(TOKERROR); }
+<err>.              {                   RETURN(TOKERROR); }
 <hdr,bdy>.          {                   RETURN(SYMBOL); }
 %%
 
@@ -115,24 +116,25 @@ new_token(
         char *raw)
 {
     int res;
+    int lineno = list->tl_lineno;
 
-    PlyToken *result = malloc(sizeof *result);
+    PlyToken *result = ply_malloc(sizeof *result);
     assert(result != NULL);
-    result->t_line = list->tl_lineno;
-    result->t_raw = strdup(raw);
+
+    result->t_line = lineno;
+    result->t_raw = ply_strdup(raw);
     result->t_type = tok_type;
     result->t_nref = 1;
-    switch(tok_type) {
-    case FORMAT: case COMMENT: case OBJ_INFO:
-    case ELEMENT: case PROPERTY: case LIST:
-        break;
+    result->t_prev = NULL;
+    result->t_next = NULL;
 
+    switch(tok_type) {
     case PLY: case CRLF: case END_HEADER:
         list->tl_lineno++;
         break;
 
     case TEXT:
-        result->t_val.text = strdup(raw);
+        result->t_val.text = result->t_raw;
         break;
 
     case UNSLIT:
@@ -151,19 +153,33 @@ new_token(
         break;
 
     case STRLIT:
-        result->t_val.strlit = strdup(raw);
+        result->t_val.strlit = ply_strdup(raw);
         unescape(result->t_val.strlit);
         break;
 
+    case IDENT:
+        result->t_val.ident = result->t_raw;
+        break;
     } /* switch */
 
     /* link */
     result->t_prev = list->tl_last;
-    if (!list->tl_last)
+    if (list->tl_last == NULL)
         list->tl_first = result;
     list->tl_last = result;
-    result->t_next = NULL;
+    list->tl_size++;
 
+    PlyToken *q, *p;
+    while ((q = list->tl_first) != NULL && q->t_line < lineno) {
+        /* unlink */
+        p = list->tl_first = q->t_next;
+        if (q->t_next) q->t_next->t_prev = NULL;
+        else list->tl_last = NULL; /* empty */
+
+        list->tl_size--;
+        free_token(q);
+    } /* while */
+        
 } /* new_token */
 
 void free_token(PlyToken *tok)
@@ -171,19 +187,66 @@ void free_token(PlyToken *tok)
     assert(tok->t_nref > 0);
     tok->t_nref--;
     if (tok->t_nref == 0) {
-        free(tok->t_raw);
+        ply_strfree(tok->t_raw);
         switch(tok->t_type) {
-        case IDENT: free(tok->t_val.ident);
-        case STRLIT: free(tok->t_val.strlit);
-        case TEXT: free(tok->t_val.text);
+        case STRLIT: ply_strfree(tok->t_val.strlit); break;
         } /* switch */
-    }
-    free(tok);
+        ply_free(tok);
+    } /* if */
 } /* free_token */
 
 void
 unescape(char *s1)
 {
     char delim = *s1;
-    char *s2 = 0;
-}
+    char *s2 = s1+1;
+    char c, st = 0;
+
+    while((c = *s2++) != 0) {
+        if(st == 0) {
+            if (c == delim) {
+                st = 1; /* skip */
+            } else {
+                *s1++ = c; /* copy */
+            }
+        } else {
+            *s1++ = c;
+            st = 0;
+        } /* else */
+    } /* while */
+    *s1 = 0;
+} /* unescape */
+
+void *plymalloc(size_t sz, const char* file, const int line, const char*func)
+{
+    void *res = malloc(sz);
+    fprintf(stderr,
+        F("MALLOC: %#p, FILE=%s, LINE=%d, FUNC=%s\n"),
+        res, file, line, func);
+    return res;
+} /* plymalloc */
+
+char *plystrdup(const char*old, const char* file, const int line, const char*func)
+{
+    char *res = strdup(old);
+    fprintf(stderr,
+        F("STRDUP: %#p, FILE=%s, LINE=%d, FUNC=%s, STRING=%s\n"),
+        res, file, line, func, old);
+    return res;
+} /* plystrdup */
+
+void  plystrfree(char* ptr, const char* file, const int line, const char*func)
+{
+    fprintf(stderr,
+        F("FREE: %#p, FILE=%s, LINE=%d, FUNC=%s, STRING=%s\n"),
+        ptr, file, line, func, ptr);
+    free(ptr);
+} /* plystrfree */
+
+void  plyfree(void* ptr, const char* file, const int line, const char*func)
+{
+    fprintf(stderr,
+        F("FREE: %#p, FILE=%s, LINE=%d, FUNC=%s\n"),
+        ptr, file, line, func);
+    free(ptr);
+} /* plyfree */
