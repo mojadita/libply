@@ -17,7 +17,7 @@
 #define DEBUG 0
 #endif
 
-#define F(fmt) __FILE__":%d:%s:" fmt, __LINE__, __func__
+#define F(fmt) __FILE__":%d:%s: " fmt, __LINE__, __func__
 
 #if DEBUG
 #define SYMBOL  (0)
@@ -25,15 +25,16 @@
         if (!tok) \
             printf(F("\033[1;37m[\033[36mEOF\033[37m]\033[m\n"));  \
         else if (isprint(tok) || isspace(tok))  \
-            printf(F("\033[1;37m[\033[36mSYMBOL\033[37m]'\033[31m%c\033[37m'\033[m\n"), tok); \
+            printf(F("\033[1;37m[\033[36mSYMBOL\033[37m] '\033[31m%c\033[37m'\033[m\n"), tok); \
         else if (tok < 32 || tok == 127) \
-            printf(F("\033[1;37m[\033[36mSYMBOL\033[37m]<%02x\033[37m>\033[m\n"), tok); \
+            printf(F("\033[1;37m[\033[36mSYMBOL\033[37m] <%02x\033[37m>\033[m\n"), tok); \
         else switch(tok) { \
         case CRLF: printf(F("\033[1;37m[\033[36mCRLF\033[37m]\033[m\n")); break; \
         case PLY: printf(F("\033[1;37m<<\033[36mPLY\033[37m>>\033[m\n")); break; \
-        case END_HEADER: printf(F("\033[1;37m<<\033[36mEND_HEADER\033[37m>>\033[m\n\n")); break; \
-        default: printf(F("\033[1;37m[\033[36m" #tok "\033[37m]<\033[31m%s\033[37m>\033[m\n"), yytext); break; \
+        case END_HEADER: printf(F("\033[1;37m<<\033[36mEND_HEADER\033[37m>>\033[m\n")); break; \
+        default: printf(F("\033[1;37m[\033[36m" #tok "\033[37m] <\033[31m%s\033[37m>\033[m\n"), yytext); break; \
         } /* switch */ \
+		return (tok); \
     } while(0)
 
 #else
@@ -54,7 +55,6 @@ static PlyTokenList ply_token_list = {
 PlyToken *new_token(PlyTokenList *the_list, int tok_type, char *raw);
 void unescape(char *s1);
 void free_token(PlyToken *the_token);
-int yylex();
 
 %}
 
@@ -103,13 +103,6 @@ str     \"([^"\n]|\"\")*\"
 <err>.              {                   RETURN(TOKERROR); }
 <hdr,bdy>.          {                   RETURN(SYMBOL); }
 %%
-
-#if DEBUG
-int main()
-{
-    yylex();
-}
-#endif 
 
 PlyToken *
 new_token(

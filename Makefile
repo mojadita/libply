@@ -24,8 +24,9 @@ $(common_objs): ply.h
 
 ply_lex_objs = ply_lex_d.o
 $(ply_lex_objs): ply_lex.h ply_parse.h ply.h
+ply_lex_libs = -ll
 ply_lex: $(ply_lex_objs)
-	$(CC) $(LDFLAGS) -o $@ $($@_objs) $(common_objs) $(LIBS)
+	$(CC) $(LDFLAGS) -o $@ $($@_objs) $(common_objs) $($@_libs) $(LIBS)
 TOCLEAN += $(ply_lex_objs) ply_lex
 
 ply_lex_d.o: ply_lex.c ply.h
@@ -37,11 +38,12 @@ ply_parse.h ply_parse.c ply_parse.lst: ply_parse.y
 		--report-file=ply_parse.lst ply_parse.y
 TOCLEAN += ply_parse.h ply_parse.c ply_parse.lst
 
-ply_parse_objs = ply_parse_d.o ply_lex.o
+ply_parse_objs = ply_parse_d.o ply_lex_d.o
 $(ply_parse_objs): ply.h ply_parse.h ply_lex.h
-TOCLEAN += ply_parse_d.o ply_lex.o
+ply_parse_libs = -ly
+TOCLEAN += $(ply_parse_objs)
 ply_parse: $(ply_parse_objs)
-	$(CC) $(CFLAGS) -o $@ $($@_objs)
+	$(CC) $(CFLAGS) -o $@ $($@_objs) $($@_libs)
 
 ply_parse_d.o: ply_parse.c
 	$(CC) $(CFLAGS) -DDEBUG=1 -o $@ -c ply_parse.c

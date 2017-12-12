@@ -18,9 +18,9 @@
 
 #define RULE(left, right) do {         \
         printf(                        \
-            F(" RULE[%d]: \033[1;33m" #left      \
-            "\033[1;31m <==\033[m"     \
-            right "\033[m\n"),         \
+            F(" \033[1;37mRULE[\033[36m%d\033[37m]\033[31m: \033[33m" #left      \
+            "\033[31m <==\033[m"     \
+            right "\033[1;31m.\033[m\n"),         \
             __LINE__);                 \
     } while(0)
 
@@ -114,13 +114,6 @@ property: PROPERTY IDENT IDENT CRLF {
         }
         
 %%
-
-#if DEBUG
-int main()
-{
-    yyparse();
-}
-#endif
 
 int yyerror(const char *s)
 {

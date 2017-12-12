@@ -34,6 +34,8 @@ struct PlyTokenList {
     PlyToken   *tl_last;
 };
 
+int yylex();
+
 #define ply_malloc(p) plymalloc(p, __FILE__, __LINE__, __func__)
 #define ply_strdup(p) plystrdup(p, __FILE__, __LINE__, __func__)
 #define ply_strfree(p) plystrfree(p, __FILE__, __LINE__, __func__)
