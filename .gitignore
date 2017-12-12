@@ -14,3 +14,7 @@ sphereply
 xformply
 ply_lex
 ply_lex.c
+ply_parse
+ply_parse.h
+ply_parse.c
+ply_parse.lst

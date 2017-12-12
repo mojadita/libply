@@ -5,11 +5,13 @@ CP_FLAGS =
 CFLAGS = -I. $(COPTIONS) $(CP_FLAGS)
 LIBS = -lm
 RM ?= rm -f
+YACC = bison
 TOCLEAN?=
 OBJS?=
 
 TARGETS= ply2ascii ply2binary xformply ply2iv sphereply \
-		 platoply boundply obj2ply flipply normalsply headply ply_lex
+		 platoply boundply obj2ply flipply normalsply headply \
+		 ply_lex ply_parse
 
 all: $(TARGETS)
 TOCLEAN+=$(TARGETS)
@@ -18,8 +20,10 @@ clean:
 
 common_objs = ply.o
 OBJS+=$(common_objs)
+$(common_objs): ply.h
 
 ply_lex_objs = ply_lex_d.o
+$(ply_lex_objs): ply_lex.h ply_parse.h ply.h
 ply_lex: $(ply_lex_objs)
 	$(CC) $(LDFLAGS) -o $@ $($@_objs) $(common_objs) $(LIBS)
 TOCLEAN += $(ply_lex_objs) ply_lex
@@ -27,6 +31,20 @@ TOCLEAN += $(ply_lex_objs) ply_lex
 ply_lex_d.o: ply_lex.c ply.h
 	$(CC) $(CFLAGS) -DDEBUG=1 -c ply_lex.c -o $@ 
 TOCLEAN += ply_lex_d.o ply_lex.c
+
+ply_parse.h ply_parse.c ply_parse.lst: ply_parse.y
+	$(YACC) $(YFLAGS) --defines=ply_parse.h -o ply_parse.c --report=all \
+		--report-file=ply_parse.lst ply_parse.y
+TOCLEAN += ply_parse.h ply_parse.c ply_parse.lst
+
+ply_parse_objs = ply_parse_d.o ply_lex.o
+$(ply_parse_objs): ply.h ply_parse.h ply_lex.h
+TOCLEAN += ply_parse_d.o ply_lex.o
+ply_parse: $(ply_parse_objs)
+	$(CC) $(CFLAGS) -o $@ $($@_objs)
+
+ply_parse_d.o: ply_parse.c
+	$(CC) $(CFLAGS) -DDEBUG=1 -o $@ -c ply_parse.c
 
 headply_objs = headply.o
 OBJS+=$(headply_objs)
