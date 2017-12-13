@@ -40,23 +40,6 @@ extern "C" {
 #include <stdio.h>
 #include <stddef.h>
 
-#define PLY_TOK_EOF         0
-#define PLY_TOK_PLY         1
-#define PLY_TOK_FORMAT      2
-#define PLY_TOK_COMMENT     3
-#define PLY_TOK_OBJECT_INFO 4
-#define PLY_TOK_TEXT        5
-#define PLY_TOK_UNSLIT      6
-#define PLY_TOK_SIGLIT      7
-#define PLY_TOK_FLTLIT      8
-#define PLY_TOK_STRLIT      9
-#define PLY_TOK_ELEMENT     10
-#define PLY_TOK_PROPERTY    11
-#define PLY_TOK_END_HEADER  12
-#define PLY_TOK_IDENT       13
-#define PLY_TOK_CRLF        14
-#define PLY_TOK_SYMBOL      15
-
 #define PLY_VERSION			"1.0"
 #define PLY_EXT				".ply"
 
